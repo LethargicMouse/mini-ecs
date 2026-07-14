@@ -3,12 +3,7 @@
 #include <memory>
 #include <vector>
 
-class Entity {
-public:
-  Entity(uint32_t id) : id(id) {}
-
-  uint32_t id;
-};
+using EntityID = uint32_t;
 
 class Component {
 public:
@@ -76,8 +71,8 @@ public:
 
   void update(float dt) {
     for (uint32_t id = 0; id < entity_ids_count; ++id) {
-      auto transformComponent = getComponent<TransformComponent>(Entity(id));
-      auto speedComponent = getComponent<SpeedComponent>(Entity(id));
+      auto transformComponent = getComponent<TransformComponent>(id);
+      auto speedComponent = getComponent<SpeedComponent>(id);
 
       if (transformComponent != nullptr && speedComponent != nullptr) {
         gravitySystem(dt, transformComponent, speedComponent);
@@ -85,29 +80,29 @@ public:
     }
   }
 
-  Entity addEntity() {
+  EntityID addEntity() {
     if (!freed_entity_ids.empty()) {
       uint32_t id = freed_entity_ids.back();
       freed_entity_ids.pop_back();
-      return Entity(id);
+      return id;
     }
     entity_components.emplace_back();
-    return Entity(entity_ids_count++);
+    return entity_ids_count++;
   }
 
-  void removeEntity(Entity entity) {
+  void removeEntity(EntityID id) {
     // removed will never be chosen by systems
     // as they do not have any components
-    entity_components[entity.id].clear();
-    freed_entity_ids.push_back(entity.id);
+    entity_components[id].clear();
+    freed_entity_ids.push_back(id);
   }
 
-  void addComponent(std::unique_ptr<Component> component, Entity entity) {
-    entity_components[entity.id].push_back(std::move(component));
+  void addComponent(std::unique_ptr<Component> component, EntityID id) {
+    entity_components[id].push_back(std::move(component));
   }
 
-  template <typename T> T *getComponent(Entity entity) const {
-    for (auto &component : entity_components[entity.id]) {
+  template <typename T> T *getComponent(EntityID id) const {
+    for (auto &component : entity_components[id]) {
       if (auto res = dynamic_cast<T *>(component.get())) {
         return res;
       }
@@ -116,8 +111,8 @@ public:
   }
 
 private:
-  template <typename T> bool hasComponent(Entity entity) const {
-    return getComponent<T>(entity) != nullptr;
+  template <typename T> bool hasComponent(EntityID id) const {
+    return getComponent<T>(id) != nullptr;
   }
 
   uint32_t entity_ids_count;
@@ -131,8 +126,8 @@ template <typename T> std::unique_ptr<Component> make_component() {
 
 int main() {
   World world;
-  Entity player = world.addEntity();
-  Entity enemy = world.addEntity();
+  EntityID player = world.addEntity();
+  EntityID enemy = world.addEntity();
   auto player_transform = make_component<TransformComponent>();
   auto enemy_transform = make_component<TransformComponent>();
   auto player_speed = make_component<SpeedComponent>();
