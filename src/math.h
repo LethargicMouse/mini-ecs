@@ -13,7 +13,8 @@ public:
   Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
 
   Vec3 operator*(float k) const { return Vec3(x * k, y * k, z * k); }
-  void operator+=(Vec3 other) {
+
+  void operator+=(Vec3<T> other) {
     x += other.x;
     y += other.y;
     z += other.z;
