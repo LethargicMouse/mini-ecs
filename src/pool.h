@@ -24,11 +24,12 @@ public:
     }
     assert(id_map[id] == SIZE_MAX);
     id_map[id] = data.size();
+    ids.push_back(id);
     data.push_back(value);
   }
 
   void remove(ID id) override {
-    if (id_map[id] == SIZE_MAX) {
+    if (!contains(id)) {
       return;
     }
     size_t index = id_map[id];
