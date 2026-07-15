@@ -1,2 +1,6 @@
 CompileFlags:
   Add: [-Wall, -Wextra]
+Diagnostics:
+  ClangTidy:
+    Add: [bugprone-*, cppcoreguidelines-*, clang-analyzer-*, readability-*, misc-*]
+    Remove: [cppcoreguidelines-pro-bounds-constant-array-index, cppcoreguidelines-special-member-functions, readability-identifier-length, misc-non-private-member-variables-in-classes]

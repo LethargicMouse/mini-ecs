@@ -1,4 +1,5 @@
 run: out
 	./out
-out: src/main.cpp
+HEADERS := $(wildcard src/*.h)
+out: src/main.cpp $(HEADERS)
 	g++ -g -o out src/*.cpp
