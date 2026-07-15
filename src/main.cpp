@@ -30,6 +30,7 @@ int main() {
 
   Transform *player_transform = world.getComponent<Transform>(player);
   assert(player_transform != nullptr);
-  std::cout << player_transform->pos.x << ' ' << player_transform->pos.y << ' '
-            << player_transform->pos.z << '\n';
+  std::cout << "player pos: " << player_transform->pos.x << ' '
+            << player_transform->pos.y << ' ' << player_transform->pos.z
+            << '\n';
 }
