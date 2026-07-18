@@ -16,6 +16,7 @@ public:
   /// Check if the pool is empty.
   virtual bool is_empty() const = 0;
 
+  /// Get the `type_name` of the elements.
   virtual std::string type_name() const = 0;
 
   /// Serialize the pool to json assuming the values are serializable.
@@ -108,8 +109,10 @@ public:
   /// Time complexity: O(1)
   bool is_empty() const override { return data.empty(); }
 
+  /// Get the elements' `type_name`.
   std::string type_name() const override { return T::type_name(); }
 
+  /// Serialization.
   json to_json() const override {
     json res = json::array();
     for (size_t i = 0; i < data.size(); ++i) {
@@ -121,6 +124,7 @@ public:
     return res;
   }
 
+  /// Deserialization.
   void from_json(const json &json) override {
     data.clear();
     ids.clear();
