@@ -31,7 +31,7 @@ int main() {
 
   auto json = world.to_json();
   std::ofstream out("world.json");
-  out << json;
+  out << std::setw(2) << json;
   out.close();
   World world2;
   world2.from_json(json);
