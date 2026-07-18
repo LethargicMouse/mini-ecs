@@ -17,6 +17,7 @@ template <typename T> struct Vec3 {
     z += other.z;
   }
 
+  /// Serialization.
   json to_json() const {
     json res;
     res["x"] = x;
@@ -25,6 +26,7 @@ template <typename T> struct Vec3 {
     return res;
   }
 
+  /// Deserialization.
   void from_json(const json &json) {
     x = json["x"];
     y = json["y"];
@@ -36,6 +38,7 @@ template <typename T> struct Vec3 {
 template <typename T> struct Vec2 {
   T x, y;
 
+  /// Serialization.
   json to_json() const {
     json res;
     res["x"] = x;
@@ -43,6 +46,7 @@ template <typename T> struct Vec2 {
     return res;
   }
 
+  /// Deserialization.
   void from_json(const json &json) {
     x = json["x"];
     y = json["y"];
