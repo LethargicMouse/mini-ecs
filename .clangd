@@ -1,5 +1,5 @@
 CompileFlags:
-  Add: [-Wall, -Wextra, -Ilib/json/single_include]
+  Add: [-Wall, -Wextra]
 Diagnostics:
   ClangTidy:
     Add: [bugprone-*, cppcoreguidelines-*, clang-analyzer-*, readability-*, misc-*]
