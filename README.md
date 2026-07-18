@@ -1,11 +1,11 @@
 # Mini-ECS
-An implementation of ECS for ITMO test task.
+An implementation of ECS with serialization for ITMO test task.
 
 ## Build
 - `make` or `make run` to build & run.
 - `make out` to build.
 
-## File structure
+## File Structure
 - `src/common.h` --- definitions that are common to all parts of the project.
 - `src/main.cpp` --- a `main` function with an example of ECS usage.
 - `src/math.h` --- 2D and 3D vectors and operations with them.
@@ -18,13 +18,21 @@ An implementation of ECS for ITMO test task.
 - `src/systems/` --- Examples of Systems --- subclasses of `System`.
 
 ## Design
+### Headers Only
 All the code except `src/main.cpp` is in header files.
-It is usually a good practice to put the implementation into `.cpp` files but
+It is usually a good practice to put the implementation into `.cpp` files, but
 in this project almost all the code is templated, and C++ needs templates implementation in
 headers to correctly compile it.
 
+### E. C. & S. representations
 - Entities are represented with `EntityID` type, which is an alias to `uint32_t`, for there is no need to distinguish between `EntityID` and `uint32_t`.
-- Components are literally any types. A value of any type can be attached to an Entity and then retrieved. The user is responsible for not attaching methods to those types and only storing data in them.
+- Components are literally any types (that implement serialization methods). A value of any type can be attached to an Entity and then retrieved. The user is responsible for not attaching methods to those types and only storing data in them.
 - All Systems inherit the `System` class and override `update` function with `World& world` and `float dt` as parameters.
   In this function, the user is free to query Entities with any set of Components, query 
   It is user's responsibility not to call `World::update` from within a System's `update` function.
+
+### Serialization
+I chose to serialize into JSON because:
+- There is an existing solution.
+- JSON is easy to read and manually edit, which is useful for engine testing.
+- We need to be able to serialize arbitrary Components, so we can't define schema.
