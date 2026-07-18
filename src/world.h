@@ -10,7 +10,22 @@
 #include <memory>
 #include <vector>
 
-using EntityID = ID;
+/// The wrapper is needed to provide `type_name` method
+struct EntityID {
+  EntityID() : id(0) {}
+  /// implicit conversion from `ID` to `EntityID`
+  EntityID(ID id) : id(id) {}
+
+  ID &operator*() { return id; }
+
+  json to_json() const { return id; }
+
+  void from_json(const json &json) { id = json; }
+
+  static std::string type_name() { return "EntityID"; }
+
+  ID id;
+};
 
 template <typename... Ts> class View;
 
@@ -34,7 +49,8 @@ public:
       id = freed_ids.back();
       freed_ids.pop_back();
     } else {
-      id = id_pool_size++;
+      id = id_pool_size;
+      (*id_pool_size)++;
     }
     // store the ID in the ID pool
     addComponent(id, id);
@@ -56,7 +72,7 @@ public:
   void removeEntity(EntityID id) {
     freed_ids.push_back(id);
     for (auto &pool : pools) {
-      pool->remove(id);
+      pool->remove(*id);
     }
   }
 
@@ -72,7 +88,7 @@ public:
   /// @param  id  The ID of the Entity.
   template <typename T> void addComponent(T component, EntityID id) {
     auto &pool = getPool<T>();
-    pool.insert(id, component);
+    pool.insert(*id, component);
   }
 
   /// @brief  Check if an Entity has a Component of given type.
@@ -84,7 +100,7 @@ public:
   /// @return  true if the Entity has the Component, false if not.
   template <typename T> bool hasComponent(EntityID id) {
     auto &pool = getPool<T>();
-    return pool.contains(id);
+    return pool.contains(*id);
   }
 
   /// @brief  Get the pointer to an Entity's Component of type `T`.
@@ -100,7 +116,7 @@ public:
   ///          if the Entity does not have a Component of this type.
   template <typename T> T *getComponent(EntityID id) {
     auto &pool = getPool<T>();
-    return pool.get(id);
+    return pool.get(*id);
   }
 
   /// @brief  update the `World` state by running all the attached Systems.
@@ -148,6 +164,37 @@ public:
   ///        for mutual reference reasons.
   template <typename... Ts> View<Ts...> view();
 
+  json to_json() const {
+    json res;
+    res["freed_ids"] = json::array();
+    for (EntityID id : freed_ids) {
+      res["freed_ids"].push_back(id.to_json());
+    }
+    res["id_pool_size"] = id_pool_size.to_json();
+
+    for (const auto &pool : pools) {
+      if (pool != nullptr && !pool->is_empty()) {
+        res["components"][pool->type_name()] = pool->to_json();
+      }
+    }
+    return res;
+  }
+
+  void from_json(json j) {
+    freed_ids.clear();
+    for (const json &id : j["freed_ids"]) {
+      freed_ids.push_back(EntityID(0));
+      freed_ids.back().from_json(id);
+    }
+    id_pool_size.from_json(j["id_pool_size"]);
+
+    pools.clear();
+    // We can't deduce the types of the pools from their `type_name`s,
+    // so we deserialize the pools lazily as they are requested.
+    // The actual deserialization happens in `getPool`.
+    pools_json = j["components"];
+  }
+
 private:
   /// @brief  Get the `Pool` of Components of a given type.
   ///
@@ -160,15 +207,21 @@ private:
     if (id >= pools.size()) {
       pools.resize(id + 1);
     }
-    if (pools[id].get() == nullptr) {
+    if (pools[id] == nullptr) {
       pools[id] = std::make_unique<Pool<T>>();
+    }
+    // here we deserialize `pools_json`, as the data is requested.
+    auto pool_json = pools_json.find(T::type_name());
+    if (pool_json != pools_json.end()) {
+      pools[id]->from_json(*pool_json);
+      pools_json.erase(pool_json);
     }
     return static_cast<Pool<T> &>(*pools[id]);
   }
 
   /// The stack of freed `EntityID`s for reuse.
   std::vector<EntityID> freed_ids;
-  EntityID id_pool_size{};
+  EntityID id_pool_size{0};
 
   /// The vector of `Pool`s for each type ever registered as a Component.
   /// `Component` class not needed - any type can be a component
@@ -176,6 +229,9 @@ private:
 
   /// The vector of all registered Systems
   std::vector<std::unique_ptr<System>> systems;
+
+  /// The pools json to be deserialized.
+  json pools_json;
 };
 
 // This whole class is a big template mess, God do I hate C++

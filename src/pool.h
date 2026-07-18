@@ -3,10 +3,7 @@
 
 #include "common.h"
 #include <cassert>
-#include <nlohmann/json.hpp>
 #include <vector>
-
-using json = nlohmann::json;
 
 class PoolAny {
 public:
@@ -15,6 +12,11 @@ public:
   /// This method is defined in the base class so we can try removing Components
   /// of an Entity being removed without knowing the exact types.
   virtual void remove(ID id) = 0;
+
+  /// Check if the pool is empty.
+  virtual bool is_empty() const = 0;
+
+  virtual std::string type_name() const = 0;
 
   /// Serialize the pool to json assuming the values are serializable.
   virtual json to_json() const = 0;
@@ -101,12 +103,19 @@ public:
   /// @return  A reference to the `vector` with all the values stored.
   std::vector<T> &getAll() { return data; }
 
+  /// @brief  Check if the Pool is empty.
+  ///
+  /// Time complexity: O(1)
+  bool is_empty() const override { return data.empty(); }
+
+  std::string type_name() const override { return T::type_name(); }
+
   json to_json() const override {
     json res = json::array();
     for (size_t i = 0; i < data.size(); ++i) {
       res.push_back({
           {"id", ids[i]},
-          {"value", data[i]},
+          {"value", data[i].to_json()},
       });
     }
     return res;
@@ -119,7 +128,8 @@ public:
 
     for (const auto &pair : json) {
       ID id = pair["id"];
-      T value = pair["value"];
+      T value;
+      value.from_json(pair["value"]);
       insert(id, value);
     }
   }
