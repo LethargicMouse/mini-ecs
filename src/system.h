@@ -18,7 +18,7 @@ public:
   virtual void update(World &world, float dt) const = 0;
 };
 
-/// Allocates a system of a given type into a `unique_ptr`.
+/// Allocates a system of a given type into `unique_ptr`.
 template <typename T> std::unique_ptr<System> make_system() {
   return std::make_unique<T>();
 }
