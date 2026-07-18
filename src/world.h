@@ -1,8 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-// no `cpp` file because templates
-
 #include "common.h"
 #include "pool.h"
 #include "system.h"
@@ -10,23 +8,32 @@
 #include <memory>
 #include <vector>
 
-/// The wrapper is needed to provide `type_name` method
+/// The wrapper to provide `type_name` method.
 struct EntityID {
+  /// default constructor required for serialization.
   EntityID() : id(0) {}
-  /// implicit conversion from `ID` to `EntityID`
+
+  /// Implicit conversion from `ID` to `EntityID`.
   EntityID(ID id) : id(id) {}
 
+  /// Unwrap `ID`.
   ID &operator*() { return id; }
 
+  /// Serialization.
   json to_json() const { return id; }
 
+  /// Deserialization.
   void from_json(const json &json) { id = json; }
 
+  /// Required for `Pool` serialization.
   static std::string type_name() { return "EntityID"; }
 
+private:
+  /// Inner ID.
   ID id;
 };
 
+/// `View` class declaration for mutual reference reasons.
 template <typename... Ts> class View;
 
 /// A class that runs the ECS and stores everything.
@@ -42,7 +49,6 @@ public:
   /// Time complexity: O(1)
   ///
   /// @return  The ID of the new entity.
-  ///
   EntityID addEntity() {
     EntityID id = 0;
     if (!freed_ids.empty()) {
@@ -164,6 +170,7 @@ public:
   ///        for mutual reference reasons.
   template <typename... Ts> View<Ts...> view();
 
+  /// Serialization.
   json to_json() const {
     json res;
     res["freed_ids"] = json::array();
@@ -180,6 +187,7 @@ public:
     return res;
   }
 
+  /// Deserialization.
   void from_json(json j) {
     freed_ids.clear();
     for (const json &id : j["freed_ids"]) {
@@ -225,12 +233,17 @@ private:
 
   /// The vector of `Pool`s for each type ever registered as a Component.
   /// `Component` class not needed - any type can be a component
+  /// UPDATE: With serialization added, the type should be `Pool` serializable:
+  /// it should have the following methods:
+  /// - `std::string type_name() const`
+  /// - `json to_json() const`
+  /// - `void from_json(const json &json)`
   std::vector<std::unique_ptr<PoolAny>> pools;
 
   /// The vector of all registered Systems
   std::vector<std::unique_ptr<System>> systems;
 
-  /// The pools json to be deserialized.
+  /// The pools' json to be lazily deserialized.
   json pools_json;
 };
 
